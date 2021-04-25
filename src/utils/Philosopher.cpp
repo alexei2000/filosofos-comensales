@@ -50,6 +50,10 @@ void Philosopher::takeForks()
 {
     this->takeRightFork();
     this->takeLeftFork();
+    {
+        lock_guard lock{cout_mutex};
+        cout << "Hola soy el filósofo " << this->data.id << " y hay tenedores disponibles empezaré a comer" << endl;
+    }
 }
 
 void Philosopher::leaveRightFork()
@@ -61,6 +65,10 @@ void Philosopher::leaveRightFork()
 void Philosopher::leaveLeftFork()
 {
     this->data.dish->leftFork = Fork::AVAILABLE;
+    {
+        lock_guard lock{cout_mutex};
+        cout << "Hola soy el filósofo " << this->data.id << " y ya terminé de comer" << endl;
+    }
     sem_post(&this->data.dish->semFork);
 }
 
@@ -87,16 +95,8 @@ void Philosopher::eat()
         cout << "Hola soy el filósofo " << this->data.id << " y tengo hambre veré si puedo comer" << endl;
     }
     this->takeForks();
-    {
-        lock_guard lock{cout_mutex};
-        cout << "Hola soy el filósofo " << this->data.id << " y hay tenedores disponibles empezaré a comer" << endl;
-    }
     this_thread::sleep_for(numRan);
     this->leaveforks();
-    {
-        lock_guard lock{cout_mutex};
-        cout << "Hola soy el filósofo " << this->data.id << " y ya terminé de comer" << endl;
-    }
 }
 
 void Philosopher::think()
