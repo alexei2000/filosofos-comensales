@@ -3,6 +3,7 @@
 
 #include "Dish.hpp"
 #include <thread>
+#include <mutex>
 
 using namespace std;
 
@@ -22,6 +23,7 @@ public:
   void setDish(Dish *dish);
 
 private:
+  static mutex cout_mutex;
   PhilosopherData data;
   thread _thread;
   void takeForks();

@@ -7,6 +7,8 @@
 
 using namespace std;
 
+mutex Philosopher::cout_mutex{};
+
 Philosopher::Philosopher(int id)
 {
     this->data.id = id;
@@ -79,19 +81,34 @@ void Philosopher::philosopherRoutine()
 
 void Philosopher::eat()
 {
-    const int numRan = 1 + rand() % 11;
-    cout << "Hola soy el filósofo " << this->data.id << " y tengo hambre veré si puedo comer" << endl;
+    const chrono::seconds numRan{1 + rand() % 11};
+    {
+        lock_guard lock{cout_mutex};
+        cout << "Hola soy el filósofo " << this->data.id << " y tengo hambre veré si puedo comer" << endl;
+    }
     this->takeForks();
-    cout << "Hola soy el filósofo " << this->data.id << " y hay tenedores disponibles empezaré a comer" << endl;
-    sleep(numRan);
+    {
+        lock_guard lock{cout_mutex};
+        cout << "Hola soy el filósofo " << this->data.id << " y hay tenedores disponibles empezaré a comer" << endl;
+    }
+    this_thread::sleep_for(numRan);
     this->leaveforks();
-    cout << "Hola soy el filósofo " << this->data.id << " y ya terminé de comer" << endl;
+    {
+        lock_guard lock{cout_mutex};
+        cout << "Hola soy el filósofo " << this->data.id << " y ya terminé de comer" << endl;
+    }
 }
 
 void Philosopher::think()
 {
-    const int numRan = 1 + rand() % 11;
-    cout << "Hola soy el filósofo " << this->data.id << " y voy a pensar un rato" << endl;
-    sleep(numRan);
-    cout << "Hola soy el filósofo " << this->data.id << " ya me aburri de pensar" << endl;
+    const chrono::seconds numRan{1 + rand() % 11};
+    {
+        lock_guard lock{cout_mutex};
+        cout << "Hola soy el filósofo " << this->data.id << " y voy a pensar un rato" << endl;
+    }
+    this_thread::sleep_for(numRan);
+    {
+        lock_guard lock{cout_mutex};
+        cout << "Hola soy el filósofo " << this->data.id << " ya me aburri de pensar" << endl;
+    }
 }
