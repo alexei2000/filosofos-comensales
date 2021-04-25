@@ -1,39 +1,36 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "DiningTable.hpp"
 #include "Philosopher.hpp"
-#include <vector>
 
 using namespace std;
 
-vector<Philosopher> createPhilosophers(int num);
-void createDiningTable(vector<Philosopher> &Philosophers);
+pair<vector<Philosopher>, unique_ptr<DiningTable>> createPhilosophers(int num);
 void simulate(vector<Philosopher> &philosophers);
 
 int main(int argc, char *argv[])
 {
     srand(time(NULL));
     int num = atoi(argv[1]);
-    vector<Philosopher> philosophers = createPhilosophers(num);
+    auto [philosophers, table] = createPhilosophers(num);
     simulate(philosophers);
     return 0;
 }
 
-vector<Philosopher> createPhilosophers(int num)
+pair<vector<Philosopher>, unique_ptr<DiningTable>> createPhilosophers(int num)
 {
     vector<Philosopher> philosophers;
     for (int i = 0; i < num; i++)
     {
-        Philosopher p(i);
-        philosophers.push_back(p);
+        philosophers.emplace_back(i);
     }
-    createDiningTable(philosophers);
-}
-
-void createDiningTable(vector<Philosopher> &Philosophers)
-{
-    DiningTable diningTable(Philosophers);
+    return {philosophers, make_unique<DiningTable>(philosophers)};
 }
 
 void simulate(vector<Philosopher> &philosophers)

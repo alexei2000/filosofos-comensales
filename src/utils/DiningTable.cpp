@@ -1,5 +1,6 @@
 #include "DiningTable.hpp"
 #include <new>
+#include <semaphore.h>
 
 DiningTable::DiningTable(std::vector<Philosopher> &philosophers)
 {
