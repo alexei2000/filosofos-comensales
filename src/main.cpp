@@ -1,8 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
-#include <memory>
+#include <cstdlib>
+#include <ctime>
 #include <utility>
 #include <vector>
 
@@ -11,32 +8,35 @@
 
 using namespace std;
 
-pair<vector<Philosopher>, unique_ptr<DiningTable>> createPhilosophers(int num);
+vector<Philosopher> createPhilosophers(int num);
 void simulate(vector<Philosopher> &philosophers);
 
 int main(int argc, char *argv[])
 {
     srand(time(NULL));
-    int num = atoi(argv[1]);
-    auto [philosophers, table] = createPhilosophers(num);
+    int num = argc > 1 ? atoi(argv[1]) : 3;
+    auto philosophers = createPhilosophers(num);
+    DiningTable table{philosophers};
     simulate(philosophers);
     return 0;
 }
 
-pair<vector<Philosopher>, unique_ptr<DiningTable>> createPhilosophers(int num)
+vector<Philosopher> createPhilosophers(int num)
 {
     vector<Philosopher> philosophers;
+
     for (int i = 0; i < num; i++)
     {
         philosophers.emplace_back(i);
     }
-    return {philosophers, make_unique<DiningTable>(philosophers)};
+
+    return philosophers;
 }
 
 void simulate(vector<Philosopher> &philosophers)
 {
-    for (int i = 0; i < philosophers.size(); i++)
+    for (auto &phil : philosophers)
     {
-        philosophers[i].philosophersLife();
+        phil.philosophersLife();
     }
 }
