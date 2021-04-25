@@ -13,14 +13,13 @@ DiningTable::DiningTable(std::vector<Philosopher> &philosophers) : firstDish{nul
 
 DiningTable::~DiningTable()
 {
-    Dish *i, *aux = this->firstDish;
-    this->lastDish->rightDish = NULL;
-    while (i != NULL)
+    lastDish->rightDish = nullptr;
+    for (Dish *i = firstDish; i != nullptr; i = i->rightDish)
     {
-        aux = i;
-        i = i->rightDish;
-        delete (aux);
+        Dish *aux = i;
+        delete aux;
     }
+    firstDish = lastDish = nullptr;
 }
 
 Dish *DiningTable::insertNode()
