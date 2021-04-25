@@ -1,8 +1,9 @@
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 #include "Philosopher.hpp"
 #include <unistd.h>
 #include <thread>
+#include <vector>
 
 using namespace std;
 
@@ -21,10 +22,14 @@ void Philosopher::setDish(Dish *dish)
     this->data.dish = dish;
 }
 
-void Philosopher::philosophersLife()
+void Philosopher::beginPhilosophersLife()
 {
-    thread life([this] { this->philosopherRoutine(); });
-    life.join();
+    _thread = thread{&Philosopher::philosopherRoutine, this};
+}
+
+void Philosopher::waitTillPhilosopherDies()
+{
+    _thread.join();
 }
 
 void Philosopher::takeRightFork()
@@ -75,17 +80,18 @@ void Philosopher::philosopherRoutine()
 void Philosopher::eat()
 {
     const int numRan = 1 + rand() % 11;
-    cout << "Hola soy el filósofo " << this->data.id << " y tengo hambre veré si puedo comer";
+    cout << "Hola soy el filósofo " << this->data.id << " y tengo hambre veré si puedo comer" << endl;
     this->takeForks();
-    cout << "Hola soy el filósofo " << this->data.id << " y hay tenedores disponibles empezaré a comer";
+    cout << "Hola soy el filósofo " << this->data.id << " y hay tenedores disponibles empezaré a comer" << endl;
     sleep(numRan);
     this->leaveforks();
-    cout << "Hola soy el filósofo " << this->data.id << " y ya terminé de comer";
+    cout << "Hola soy el filósofo " << this->data.id << " y ya terminé de comer" << endl;
 }
+
 void Philosopher::think()
 {
     const int numRan = 1 + rand() % 11;
-    cout << "Hola soy el filósofo " << this->data.id << " y voy a pensar un rato";
+    cout << "Hola soy el filósofo " << this->data.id << " y voy a pensar un rato" << endl;
     sleep(numRan);
-    cout << "Hola soy el filósofo " << this->data.id << " ya me aburri de pensar";
+    cout << "Hola soy el filósofo " << this->data.id << " ya me aburri de pensar" << endl;
 }

@@ -2,21 +2,28 @@
 #define PHILOSOPHER_H
 
 #include "Dish.hpp"
+#include <thread>
 
-struct PhilosopherData {
+using namespace std;
+
+struct PhilosopherData
+{
   int id;
   Dish *dish;
 };
 
-class Philosopher {
- public:
+class Philosopher
+{
+public:
   Philosopher(int id);
   PhilosopherData getData();
-  void philosophersLife();
+  void beginPhilosophersLife();
+  void waitTillPhilosopherDies();
   void setDish(Dish *dish);
 
- private:
+private:
   PhilosopherData data;
+  thread _thread;
   void takeForks();
   void takeRightFork();
   void takeLeftFork();

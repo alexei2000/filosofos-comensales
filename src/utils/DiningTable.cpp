@@ -2,7 +2,7 @@
 #include <new>
 #include <semaphore.h>
 
-DiningTable::DiningTable(std::vector<Philosopher> &philosophers)
+DiningTable::DiningTable(std::vector<Philosopher> &philosophers) : firstDish{nullptr}, lastDish{nullptr}
 {
     for (int i = 0; i < philosophers.size(); i++)
     {

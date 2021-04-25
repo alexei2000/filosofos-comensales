@@ -37,6 +37,11 @@ void simulate(vector<Philosopher> &philosophers)
 {
     for (auto &phil : philosophers)
     {
-        phil.philosophersLife();
+        phil.beginPhilosophersLife();
+    }
+
+    for (auto &phil : philosophers)
+    {
+        phil.waitTillPhilosopherDies();
     }
 }
