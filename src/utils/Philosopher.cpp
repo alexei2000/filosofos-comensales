@@ -3,6 +3,7 @@
 #include "Philosopher.hpp"
 #include <unistd.h>
 #include <thread>
+#include <chrono>
 #include <vector>
 
 using namespace std;
@@ -34,81 +35,60 @@ void Philosopher::waitTillPhilosopherDies()
     _thread.join();
 }
 
-void Philosopher::takeRightFork()
+void Philosopher::takeForks() const
 {
-    sem_wait(&this->data.dish->rightDish->semFork);
-    this->data.dish->rightDish->leftFork = Fork::TAKEN;
+    data.dish->takeForks();
 }
 
-void Philosopher::takeLeftFork()
+void Philosopher::leaveForks() const
 {
-    sem_wait(&this->data.dish->semFork);
-    this->data.dish->leftFork = Fork::TAKEN;
-}
-
-void Philosopher::takeForks()
-{
-    this->takeRightFork();
-    this->takeLeftFork();
-    {
-        lock_guard lock{cout_mutex};
-        cout << "Hola soy el filósofo " << this->data.id << " y hay tenedores disponibles empezaré a comer" << endl;
-    }
-}
-
-void Philosopher::leaveRightFork()
-{
-    this->data.dish->rightDish->leftFork = Fork::AVAILABLE;
-    sem_post(&this->data.dish->rightDish->semFork);
-}
-
-void Philosopher::leaveLeftFork()
-{
-    this->data.dish->leftFork = Fork::AVAILABLE;
-    {
-        lock_guard lock{cout_mutex};
-        cout << "Hola soy el filósofo " << this->data.id << " y ya terminé de comer" << endl;
-    }
-    sem_post(&this->data.dish->semFork);
-}
-
-void Philosopher::leaveforks()
-{
-    this->leaveRightFork();
-    this->leaveLeftFork();
+    data.dish->leaveForks();
 }
 
 void Philosopher::philosopherRoutine()
 {
     while (true)
     {
-        this->think();
-        this->eat();
+        think();
+        eat();
     }
 }
 
-void Philosopher::eat()
+void Philosopher::eat() const
 {
     const chrono::seconds numRan{1 + rand() % 11};
     {
         lock_guard lock{cout_mutex};
-        cout << "Hola soy el filósofo " << this->data.id << " y tengo hambre veré si puedo comer" << endl;
+        cout << "Hola soy el filósofo "
+             << this->data.id << " y tengo hambre veré si puedo comer." << endl;
     }
-    this->takeForks();
+    takeForks();
+    {
+        lock_guard lock{cout_mutex};
+        cout << "Hola soy el filósofo "
+             << this->data.id << " y hay tenedores disponibles empezaré a comer durante "
+             << numRan.count() << " segundos." << endl;
+    }
     this_thread::sleep_for(numRan);
-    this->leaveforks();
+    {
+        lock_guard lock{cout_mutex};
+        cout << "Hola soy el filósofo " << this->data.id << " y ya terminé de comer." << endl;
+    }
+    leaveForks();
 }
 
-void Philosopher::think()
+void Philosopher::think() const
 {
     const chrono::seconds numRan{1 + rand() % 11};
     {
         lock_guard lock{cout_mutex};
-        cout << "Hola soy el filósofo " << this->data.id << " y voy a pensar un rato" << endl;
+        cout << "Hola soy el filósofo "
+             << this->data.id << " y voy a pensar "
+             << numRan.count() << " segundos." << endl;
     }
     this_thread::sleep_for(numRan);
     {
         lock_guard lock{cout_mutex};
-        cout << "Hola soy el filósofo " << this->data.id << " ya me aburri de pensar" << endl;
+        cout << "Hola soy el filósofo " << this->data.id << " ya me aburri de pensar." << endl;
     }
 }

@@ -4,11 +4,11 @@
 
 DiningTable::DiningTable(std::vector<Philosopher> &philosophers) : firstDish{nullptr}, lastDish{nullptr}
 {
-    for (int i = 0; i < philosophers.size(); i++)
+    for (auto &phil : philosophers)
     {
-        philosophers[i].setDish(this->insertNode());
+        phil.setDish(this->insertNode());
     }
-    this->closeList();
+    closeList();
 }
 
 DiningTable::~DiningTable()
@@ -24,10 +24,8 @@ DiningTable::~DiningTable()
 
 Dish *DiningTable::insertNode()
 {
-    Dish *newDish = new Dish;
-    newDish->rightDish = NULL;
-    newDish->leftFork = Fork::AVAILABLE;
-    sem_init(&newDish->semFork, 0, 1);
+    Dish *newDish = new Dish();
+
     if (this->firstDish == NULL)
     {
         this->firstDish = newDish;

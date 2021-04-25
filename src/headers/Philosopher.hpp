@@ -26,16 +26,11 @@ private:
   static mutex cout_mutex;
   PhilosopherData data;
   thread _thread;
-  void takeForks();
-  void takeRightFork();
-  void takeLeftFork();
-  void leaveForks();
-  void leaveRightFork();
-  void leaveLeftFork();
-  void leaveforks();
+  void takeForks() const;
+  void leaveForks() const;
   void philosopherRoutine();
-  void eat();
-  void think();
+  void eat() const;
+  void think() const;
 };
 
 #endif
