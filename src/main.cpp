@@ -13,7 +13,8 @@
 
 using namespace std;
 
-void simulate(forward_list<Philosopher> &philosophers);
+void simulate(forward_list<Philosopher> &philosophers,
+              const Settings &settings);
 
 enum class Event
 {
@@ -27,17 +28,19 @@ int main(int argc, char *argv[])
     const auto settings =
         parseArgs(vector<const char *>(argv + 1, argv + argc));
 
-    int num = argc > 1 ? atoi(argv[1]) : 3;
+    auto philosophers = forward_list<Philosopher>(settings.cantidadFilosofos);
 
-    auto philosophers = forward_list<Philosopher>(num);
+    for (auto &phil : philosophers)
+    {
+        phil.setMaxThink(settings.maxThinkingTime);
+        phil.setMaxEat(settings.maxEatingTime);
+    }
 
     DiningTable table;
 
     table.serve(philosophers.begin(), philosophers.end());
 
-    simulate(philosophers);
-
-    return 0;
+    simulate(philosophers, settings);
 }
 
 void process_input(queue<Event> &eventQueue, mutex &queueMut,
@@ -79,7 +82,7 @@ double duration_to_seconds_double(const chrono::duration<Rep, Period> &d)
     return d.count() * factor;
 }
 
-void simulate(forward_list<Philosopher> &philosophers)
+void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
 {
     atomic_bool all_philosophers_died = false;
     Logger logger;
@@ -143,7 +146,8 @@ void simulate(forward_list<Philosopher> &philosophers)
             if (should_render)
             {
                 system("clear");
-                cout << duration_to_seconds_double(time_since_start) << ": ";
+                cout << duration_to_seconds_double(time_since_start) << " / "
+                     << settings.duracionSimulacion.count() << " secs: ";
 
                 for (const auto &philosopher : philosophers)
                 {
@@ -157,6 +161,13 @@ void simulate(forward_list<Philosopher> &philosophers)
             this_thread::yield();
         }
     }};
+
+    this_thread::sleep_for(settings.duracionSimulacion);
+
+    {
+        lock_guard lock{event_queue_mutex};
+        event_queue.push(Event::quit);
+    }
 
     for (auto &phil : philosophers)
     {

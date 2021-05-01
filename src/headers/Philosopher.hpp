@@ -6,7 +6,6 @@
 
 #include <atomic>
 #include <iostream>
-#include <mutex>
 #include <thread>
 
 using namespace std;
@@ -35,6 +34,8 @@ public:
     string getColoredId() const;
     bool isEating() const;
     bool isDead() const;
+    void setMaxThink(chrono::seconds value) { maxThink = value; }
+    void setMaxEat(chrono::seconds value) { maxEat = value; }
 
     static void registerLogger(Logger &l);
     static void log(const string &);
@@ -46,6 +47,8 @@ private:
     atomic_bool died{false};
     atomic_bool eating{false};
     thread lifeThread{};
+    chrono::seconds maxThink{10s};
+    chrono::seconds maxEat{10s};
     PhilosopherData data;
     void takeForks() const;
     void leaveForks() const;

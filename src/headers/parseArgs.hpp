@@ -16,11 +16,11 @@ enum class Speed
 
 struct Settings
 {
-    milliseconds duracionSimulacion;
+    seconds duracionSimulacion;
     Speed speed;
     unsigned cantidadFilosofos;
-    milliseconds maxThinkingTime;
-    milliseconds maxEatingTime;
+    seconds maxThinkingTime;
+    seconds maxEatingTime;
 };
 
 Settings parseArgs(const vector<const char *> &args);

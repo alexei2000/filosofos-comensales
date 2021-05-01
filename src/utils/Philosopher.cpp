@@ -65,7 +65,7 @@ static auto generate_random = mt19937{random_device{}()};
 
 void Philosopher::eat()
 {
-    const chrono::seconds numRan{1 + generate_random() % 10};
+    const chrono::seconds numRan{1 + generate_random() % maxEat.count()};
 
     log("El filósofo " + to_string(getId()) + " quiere comer por " +
         to_string(numRan.count()) + " segundos.");
@@ -81,7 +81,7 @@ void Philosopher::eat()
 
 void Philosopher::think() const
 {
-    const chrono::seconds numRan{1 + generate_random() % 11};
+    const chrono::seconds numRan{1 + generate_random() % maxThink.count()};
     this_thread::sleep_for(numRan);
 }
 
@@ -93,9 +93,9 @@ string Philosopher::getColoredId() const
 
     if (isEating())
     {
-        ss << "\x1b[1;30;42m";
+        ss << "\x1b[7;32m";
     }
-    if (isDead())
+    else if (isDead())
     {
         ss << "\x1b[1;31m";
     }

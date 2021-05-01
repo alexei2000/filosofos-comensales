@@ -20,19 +20,20 @@ istream &operator>>(istream &is, Speed &s)
     }
     else
     {
-        is.setstate(is.badbit);
+        is.setstate(istream::badbit);
     }
     return is;
 }
 
 Settings parseArgs(const vector<const char *> &args)
 {
-    if (args.size() < 5)
+    constexpr auto ARG_COUNT = 5U;
+    if (args.size() < ARG_COUNT)
     {
         cerr << "Opciones inválidas.\n"
-             << "Debe ingresar: <duracionSimulacion> <velocidad: fast | medium "
-                "| slow> <cantidadFilosofos> "
-                "<maxThinkingTime> <maxEatingTime>\n";
+             << "Debe ingresar: <cantidadFilosofos> <velocidad: fast | medium "
+                "| slow> <duracionSimulacion> <maxThinkingTime> "
+                "<maxEatingTime>\n";
         exit(EXIT_FAILURE);
     }
 
@@ -58,21 +59,21 @@ Settings parseArgs(const vector<const char *> &args)
                 "positivo\n";
         exit(EXIT_FAILURE);
     }
-    sett.duracionSimulacion = milliseconds{aux};
+    sett.duracionSimulacion = seconds{aux};
 
     if (!(stringstream(args[3]) >> aux))
     {
         cerr << "La cantidad de fiósofos debe ser un número entero positivo\n";
         exit(EXIT_FAILURE);
     }
-    sett.maxThinkingTime = milliseconds{aux};
+    sett.maxThinkingTime = seconds{aux};
 
     if (!(stringstream(args[4]) >> aux))
     {
         cerr << "La cantidad de fiósofos debe ser un número entero positivo\n";
         exit(EXIT_FAILURE);
     }
-    sett.maxEatingTime = milliseconds{aux};
+    sett.maxEatingTime = seconds{aux};
 
     return sett;
 }
