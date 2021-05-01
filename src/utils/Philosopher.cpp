@@ -59,13 +59,13 @@ static auto generate_random = mt19937{random_device{}()};
 void Philosopher::eat()
 {
     const chrono::seconds numRan{1 + generate_random() % maxEat.count()};
-    waitCounter++;
     const auto initialTime = chrono::steady_clock::now();
     takeForks();
     const auto finalTime = chrono::steady_clock::now();
     totalWatingTime +=
         chrono::duration_cast<chrono::seconds>(finalTime - initialTime);
     pause->wait();
+    waitCounter++;
     state = PhilosopherStates::EATING;
     this_thread::sleep_for(numRan);
     leaveForks();
@@ -76,13 +76,11 @@ void Philosopher::eat()
 void Philosopher::think()
 {
     const chrono::seconds numRan{1 + generate_random() % maxThink.count()};
-    totalThinkingTime += numRan;
     pause->wait();
     state = PhilosopherStates::THINKING;
-    thinkCounter++;
     this_thread::sleep_for(numRan);
-    pause->wait();
-    state = PhilosopherStates::WAITING;
+    totalThinkingTime += numRan;
+    thinkCounter++;
 }
 
 unsigned Philosopher::getId() const { return data.id; }
