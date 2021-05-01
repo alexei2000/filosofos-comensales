@@ -3,13 +3,21 @@
 
 #include "Dish.hpp"
 #include "Logger.hpp"
-
+#include <chrono>
 #include <atomic>
 #include <iostream>
 #include <mutex>
 #include <thread>
 
 using namespace std;
+
+enum class PhilosopherStates
+{
+    THINKING,
+    EATING,
+    WATING,
+    DEAD,
+};
 
 struct PhilosopherData
 {
@@ -27,6 +35,12 @@ public:
     Philosopher &operator=(Philosopher &&) = delete;
 
     PhilosopherData getData();
+    int getEatCounter();
+    int getThinkCounter();
+    int getWaitCounter();
+    chrono::seconds getAverageEatingTime();
+    chrono::seconds getAverageThinkingTime();
+    chrono::seconds getAverageWatingTime();
     void beginPhilosophersLife();
     void waitTillPhilosopherDies();
     void setDish(Dish *dish);
@@ -35,22 +49,23 @@ public:
     bool isEating() const;
     bool isDead() const;
 
-    static void registerLogger(Logger &l);
-    static void log(const string &);
-
 private:
     static unsigned next_id;
-    static Logger *logger_ptr;
-    atomic_bool killed{false};
-    atomic_bool died{false};
-    atomic_bool eating{false};
+    enum PhilosopherStates state;
+    bool killed{false};
+    int eatCounter;
+    int thinkCounter;
+    int waitCounter;
+    chrono::seconds totalEatingTime;
+    chrono::seconds totalThinkingTime;
+    chrono::seconds totalWatingTime;
     thread lifeThread{};
     PhilosopherData data;
     void takeForks() const;
     void leaveForks() const;
     void philosopherRoutine();
     void eat();
-    void think() const;
+    void think();
 };
 
 #endif
