@@ -3,9 +3,11 @@
 
 #include "Dish.hpp"
 #include "Logger.hpp"
-#include <chrono>
+#include "Pause.hpp"
 #include <atomic>
+#include <chrono>
 #include <iostream>
+#include <shared_mutex>
 #include <thread>
 
 using namespace std;
@@ -14,7 +16,7 @@ enum class PhilosopherStates
 {
     THINKING,
     EATING,
-    WATING,
+    WAITING,
     DEAD,
 };
 
@@ -48,11 +50,15 @@ public:
     string getColoredId() const;
     bool isEating() const;
     bool isDead() const;
+    bool isThinking() const;
     void setMaxThink(chrono::seconds value) { maxThink = value; }
     void setMaxEat(chrono::seconds value) { maxEat = value; }
 
+    static void registerPause(Pause *p) { pause = p; }
+
 private:
     static unsigned next_id;
+    inline static Pause *pause = nullptr;
     enum PhilosopherStates state;
     bool killed{false};
     int eatCounter;

@@ -4,10 +4,12 @@
 #include <iomanip>
 #include <iostream>
 #include <queue>
+#include <shared_mutex>
 #include <utility>
 
 #include "DiningTable.hpp"
 #include "Logger.hpp"
+#include "Pause.hpp"
 #include "Philosopher.hpp"
 #include "parseArgs.hpp"
 
@@ -19,6 +21,8 @@ void simulate(forward_list<Philosopher> &philosophers,
 enum class Event
 {
     quit,
+    pause,
+    play
 };
 
 int main(int argc, char *argv[])
@@ -48,18 +52,24 @@ void process_input(queue<Event> &eventQueue, mutex &queueMut,
 {
     while (!finished)
     {
-        char c;
-        while ((c = cin.peek()) != istream::traits_type::eof() && cin &&
-               c != '\n')
+
+        if (cin && cin.rdbuf()->in_avail() > 0)
         {
-            cin.get();
+            char c = cin.get();
             Event e;
-            if (c == 'q')
+            switch (c)
             {
+            case 'q':
                 e = Event::quit;
-            }
-            else
-            {
+                break;
+            case 'p':
+                e = Event::pause;
+                break;
+            case 'o':
+                e = Event::play;
+                break;
+            case '\n':
+            default:
                 continue;
             }
             lock_guard lock{queueMut};
@@ -85,40 +95,55 @@ double duration_to_seconds_double(const chrono::duration<Rep, Period> &d)
 void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
 {
     atomic_bool all_philosophers_died = false;
-    Logger logger;
-    Philosopher::registerLogger(logger);
+
+    constexpr auto renders_interval = 1000ms;
+
+    Pause pause_handle;
+
+    auto event_queue_mutex = mutex{};
+    auto event_queue = queue<Event>{};
+
+    auto kill_all = [&] {
+        cout << "\nMatando a los filósofos. Espere un momento.\n";
+        for_each(philosophers.begin(), philosophers.end(),
+                 mem_fn(&Philosopher::kill));
+    };
+
+    Philosopher::registerPause(&pause_handle);
+
+    auto pause = [&] {
+        cout << "\nPausando simulación.\n";
+        pause_handle.pause();
+    };
+
+    auto play = [&] {
+        cout << "\nContinuando simulación.\n";
+        pause_handle.play();
+    };
 
     for (auto &phil : philosophers)
     {
         phil.beginPhilosophersLife();
     }
 
-    constexpr auto renders_interval = 1000ms;
-
-    auto event_queue_mutex = mutex{};
-    auto event_queue = queue<Event>{};
-
-    auto kill_all = [&] {
-        logger("Matando a los filósofos. Espere un momento.");
-        for_each(philosophers.begin(), philosophers.end(),
-                 mem_fn(&Philosopher::kill));
-    };
-
     auto input_thread = thread{[&] {
         process_input(event_queue, event_queue_mutex, all_philosophers_died);
     }};
+
+    mutex ready_mutex;
+    condition_variable ready_cv;
+    bool ready = false;
 
     auto render_thread = thread{[&] {
         const auto start_time = chrono::steady_clock::now();
 
         auto last_render_time = start_time;
+        chrono::steady_clock::duration pause_time = 0s;
 
         while (!all_philosophers_died)
         {
-
-            for (;;)
+            for (Event e;;)
             {
-                Event e;
                 {
                     lock_guard lock{event_queue_mutex};
                     if (event_queue.empty())
@@ -133,6 +158,12 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
                 case Event::quit:
                     kill_all();
                     break;
+                case Event::pause:
+                    pause();
+                    break;
+                case Event::play:
+                    play();
+                    break;
                 }
             }
 
@@ -143,26 +174,43 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
             const auto should_render =
                 time_since_last_render >= renders_interval;
 
+            if (time_since_start - pause_time > settings.duracionSimulacion &&
+                !ready)
+            {
+                {
+                    lock_guard lck{ready_mutex};
+                    ready = true;
+                }
+                ready_cv.notify_one();
+            }
+
             if (should_render)
             {
-                system("clear");
-                cout << duration_to_seconds_double(time_since_start) << " / "
-                     << settings.duracionSimulacion.count() << " secs: ";
+                if (pause_handle.isPaused())
+                {
+                    pause_time += time_since_last_render;
+                }
+                cout << chrono::duration_cast<chrono::seconds>(
+                            time_since_start - pause_time)
+                            .count()
+                     << " / " << settings.duracionSimulacion.count()
+                     << " secs: ";
 
                 for (const auto &philosopher : philosophers)
                 {
                     cout << philosopher.getColoredId() << " ";
                 }
-                cout << '\n' << logger;
-                cout.flush();
-
+                cout << endl;
                 last_render_time = chrono::steady_clock::now();
             }
             this_thread::yield();
         }
     }};
 
-    this_thread::sleep_for(settings.duracionSimulacion);
+    {
+        unique_lock lk{ready_mutex};
+        ready_cv.wait(lk, [&] { return ready; });
+    }
 
     {
         lock_guard lock{event_queue_mutex};
