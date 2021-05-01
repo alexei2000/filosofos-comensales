@@ -1,94 +1,91 @@
-#include <cstdlib>
-#include <iostream>
 #include "Philosopher.hpp"
-#include <unistd.h>
-#include <thread>
 #include <chrono>
+#include <random>
+#include <thread>
+#include <unistd.h>
 #include <vector>
 
 using namespace std;
 
-mutex Philosopher::cout_mutex{};
+unsigned Philosopher::next_id{1};
+Logger *Philosopher::logger_ptr{nullptr};
 
-Philosopher::Philosopher(int id)
+Philosopher::Philosopher() : data{next_id++, nullptr} {}
+
+void Philosopher::registerLogger(Logger &l) { logger_ptr = &l; }
+
+void Philosopher::log(const string &text)
 {
-    this->data.id = id;
+    if (logger_ptr != nullptr)
+    {
+        (*logger_ptr)(text);
+    }
 }
 
-PhilosopherData Philosopher::getData()
-{
-    return this->data;
-}
+PhilosopherData Philosopher::getData() { return this->data; }
 
-void Philosopher::setDish(Dish *dish)
-{
-    this->data.dish = dish;
-}
+void Philosopher::setDish(Dish *dish) { this->data.dish = dish; }
 
 void Philosopher::beginPhilosophersLife()
 {
-    _thread = thread{&Philosopher::philosopherRoutine, this};
+    lifeThread = thread{&Philosopher::philosopherRoutine, this};
 }
 
-void Philosopher::waitTillPhilosopherDies()
-{
-    _thread.join();
-}
+void Philosopher::waitTillPhilosopherDies() { lifeThread.join(); }
 
-void Philosopher::takeForks() const
-{
-    data.dish->takeForks();
-}
+void Philosopher::takeForks() const { data.dish->takeForks(); }
 
-void Philosopher::leaveForks() const
-{
-    data.dish->leaveForks();
-}
+void Philosopher::leaveForks() const { data.dish->leaveForks(); }
 
 void Philosopher::philosopherRoutine()
 {
-    while (true)
+    while (!killed)
     {
         think();
+
+        if (killed)
+        {
+            break;
+        }
+
         eat();
     }
+    died = true;
+    log("Murió el filósofo: " + to_string(getId()));
 }
 
-void Philosopher::eat() const
+void Philosopher::kill()
 {
-    const chrono::seconds numRan{1 + rand() % 11};
-    {
-        lock_guard lock{cout_mutex};
-        cout << "Hola soy el filósofo "
-             << this->data.id << " y tengo hambre veré si puedo comer." << endl;
-    }
+    killed = true;
+    log("Han asesinado al filósofo: " + to_string(getId()));
+}
+
+static auto generate_random = mt19937{random_device{}()};
+
+void Philosopher::eat()
+{
+    const chrono::seconds numRan{1 + generate_random() % 10};
+
+    log("El filósofo " + to_string(getId()) + " quiere comer por " +
+        to_string(numRan.count()) + " segundos.");
+
     takeForks();
-    {
-        lock_guard lock{cout_mutex};
-        cout << "Hola soy el filósofo "
-             << this->data.id << " y hay tenedores disponibles empezaré a comer durante "
-             << numRan.count() << " segundos." << endl;
-    }
+    eating = true;
+    log("El filósofo " + to_string(getId()) + " empezó a comer.");
     this_thread::sleep_for(numRan);
-    {
-        lock_guard lock{cout_mutex};
-        cout << "Hola soy el filósofo " << this->data.id << " y ya terminé de comer." << endl;
-    }
     leaveForks();
+    eating = false;
+    log("El filósofo " + to_string(getId()) + " terminó de comer.");
 }
 
 void Philosopher::think() const
 {
-    const chrono::seconds numRan{1 + rand() % 11};
-    {
-        lock_guard lock{cout_mutex};
-        cout << "Hola soy el filósofo "
-             << this->data.id << " y voy a pensar "
-             << numRan.count() << " segundos." << endl;
-    }
+    const chrono::seconds numRan{1 + generate_random() % 11};
     this_thread::sleep_for(numRan);
-    {
-        lock_guard lock{cout_mutex};
-        cout << "Hola soy el filósofo " << this->data.id << " ya me aburri de pensar." << endl;
-    }
 }
+
+unsigned Philosopher::getId() const { return data.id; }
+
+bool Philosopher::isEating() const { return eating; }
+
+bool Philosopher::isDead() const { return died; }
