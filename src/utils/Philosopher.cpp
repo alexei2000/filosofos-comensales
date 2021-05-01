@@ -1,6 +1,7 @@
 #include "Philosopher.hpp"
 #include <chrono>
 #include <random>
+#include <sstream>
 #include <thread>
 #include <unistd.h>
 #include <vector>
@@ -64,7 +65,7 @@ static auto generate_random = mt19937{random_device{}()};
 
 void Philosopher::eat()
 {
-    const chrono::seconds numRan{1 + generate_random() % 10};
+    const chrono::seconds numRan{1 + generate_random() % maxEat.count()};
 
     log("El filósofo " + to_string(getId()) + " quiere comer por " +
         to_string(numRan.count()) + " segundos.");
@@ -80,11 +81,30 @@ void Philosopher::eat()
 
 void Philosopher::think() const
 {
-    const chrono::seconds numRan{1 + generate_random() % 11};
+    const chrono::seconds numRan{1 + generate_random() % maxThink.count()};
     this_thread::sleep_for(numRan);
 }
 
 unsigned Philosopher::getId() const { return data.id; }
+
+string Philosopher::getColoredId() const
+{
+    stringstream ss;
+
+    if (isEating())
+    {
+        ss << "\x1b[7;32m";
+    }
+    else if (isDead())
+    {
+        ss << "\x1b[1;31m";
+    }
+
+    ss << ' ' << getId() << ' ';
+    ss << "\x1b[0m";
+
+    return ss.str();
+}
 
 bool Philosopher::isEating() const { return eating; }
 
