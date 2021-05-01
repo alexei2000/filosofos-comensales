@@ -32,6 +32,7 @@ public:
     void setDish(Dish *dish);
     void kill();
     unsigned getId() const;
+    string getColoredId() const;
     bool isEating() const;
     bool isDead() const;
 

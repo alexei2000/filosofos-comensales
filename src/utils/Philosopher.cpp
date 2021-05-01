@@ -1,6 +1,7 @@
 #include "Philosopher.hpp"
 #include <chrono>
 #include <random>
+#include <sstream>
 #include <thread>
 #include <unistd.h>
 #include <vector>
@@ -85,6 +86,25 @@ void Philosopher::think() const
 }
 
 unsigned Philosopher::getId() const { return data.id; }
+
+string Philosopher::getColoredId() const
+{
+    stringstream ss;
+
+    if (isEating())
+    {
+        ss << "\x1b[1;30;42m";
+    }
+    if (isDead())
+    {
+        ss << "\x1b[1;31m";
+    }
+
+    ss << ' ' << getId() << ' ';
+    ss << "\x1b[0m";
+
+    return ss.str();
+}
 
 bool Philosopher::isEating() const { return eating; }
 

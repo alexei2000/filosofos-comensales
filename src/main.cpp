@@ -9,6 +9,7 @@
 #include "DiningTable.hpp"
 #include "Logger.hpp"
 #include "Philosopher.hpp"
+#include "parseArgs.hpp"
 
 using namespace std;
 
@@ -22,6 +23,9 @@ enum class Event
 int main(int argc, char *argv[])
 {
     ios_base::sync_with_stdio(false);
+
+    const auto settings =
+        parseArgs(vector<const char *>(argv + 1, argv + argc));
 
     int num = argc > 1 ? atoi(argv[1]) : 3;
 
@@ -143,16 +147,7 @@ void simulate(forward_list<Philosopher> &philosophers)
 
                 for (const auto &philosopher : philosophers)
                 {
-                    if (philosopher.isEating())
-                    {
-                        cout << "\x1b[1;30;42m";
-                    }
-                    if (philosopher.isDead())
-                    {
-                        cout << "\x1b[1;31m";
-                    }
-                    const auto *reset = "\x1b[0m";
-                    cout << " " << philosopher.getId() << " " << reset << " ";
+                    cout << philosopher.getColoredId() << " ";
                 }
                 cout << '\n' << logger;
                 cout.flush();

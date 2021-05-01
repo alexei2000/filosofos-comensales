@@ -7,13 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
-include_directories(${PROJECT_SOURCE_DIR}/src/headers)
+file(GLOB SOURCES ${PROJECT_SOURCE_DIR}/src/utils/*.cpp)
 
-add_library(diningTable ${PROJECT_SOURCE_DIR}/src/utils/DiningTable.cpp)
-target_link_libraries(diningTable PRIVATE Threads::Threads)
+file(GLOB HEADERS ${PROJECT_SOURCE_DIR}/src/headers/*.hpp)
 
-add_library(philosopher ${PROJECT_SOURCE_DIR}/src/utils/Philosopher.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp ${HEADERS} ${SOURCES})
 
-add_executable("${PROJECT_NAME}" src/main.cpp)
+target_include_directories(${PROJECT_NAME}
+                           PRIVATE ${PROJECT_SOURCE_DIR}/src/headers)
 
-target_link_libraries(${PROJECT_NAME} diningTable philosopher)
+target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
