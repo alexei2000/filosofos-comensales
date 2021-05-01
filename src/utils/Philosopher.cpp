@@ -1,6 +1,7 @@
 #include "Philosopher.hpp"
 
 #include <random>
+#include <sstream>
 #include <thread>
 #include <unistd.h>
 #include <vector>
@@ -60,7 +61,7 @@ static auto generate_random = mt19937{random_device{}()};
 
 void Philosopher::eat()
 {
-    const chrono::seconds numRan{1 + generate_random() % 10};
+    const chrono::seconds numRan{1 + generate_random() % maxEat.count()};
     state = PhilosopherStates::WATING;
     waitCounter++;
     const auto initialTime = chrono::steady_clock::now();
@@ -74,7 +75,7 @@ void Philosopher::eat()
 
 void Philosopher::think()
 {
-    const chrono::seconds numRan{1 + generate_random() % 10};
+    const chrono::seconds numRan{1 + generate_random() % maxThink.count()};
     totalThinkingTime += numRan;
     state = PhilosopherStates::THINKING;
     thinkCounter++;
@@ -82,6 +83,7 @@ void Philosopher::think()
 }
 
 unsigned Philosopher::getId() const { return data.id; }
+
 int Philosopher::getEatCounter() { return eatCounter; }
 int Philosopher::getThinkCounter() { return thinkCounter; }
 int Philosopher::getWaitCounter() { return waitCounter; }
@@ -90,3 +92,22 @@ chrono::seconds Philosopher::getAverageThinkingTime() { return totalThinkingTime
 chrono::seconds Philosopher::getAverageWatingTime() { return totalWatingTime / waitCounter; }
 bool Philosopher::isEating() const { return state == PhilosopherStates::EATING; }
 bool Philosopher::isDead() const { return state == PhilosopherStates::DEAD; }
+
+string Philosopher::getColoredId() const
+{
+    stringstream ss;
+
+    if (isEating())
+    {
+        ss << "\x1b[7;32m";
+    }
+    else if (isDead())
+    {
+        ss << "\x1b[1;31m";
+    }
+
+    ss << ' ' << getId() << ' ';
+    ss << "\x1b[0m";
+
+    return ss.str();
+}
