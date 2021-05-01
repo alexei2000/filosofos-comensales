@@ -105,8 +105,11 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
 
     auto kill_all = [&] {
         cout << "\nMatando a los filósofos. Espere un momento.\n";
-        for_each(philosophers.begin(), philosophers.end(),
-                 mem_fn(&Philosopher::kill));
+
+        for (auto &phil : philosophers)
+        {
+            phil.kill();
+        }
     };
 
     Philosopher::registerPause(&pause_handle);
@@ -133,6 +136,17 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
     mutex ready_mutex;
     condition_variable ready_cv;
     bool ready = false;
+
+    auto notify_ready = [&] {
+        lock_guard lck{ready_mutex};
+        ready = true;
+        ready_cv.notify_one();
+    };
+
+    auto wait_till_ready = [&] {
+        unique_lock lk{ready_mutex};
+        ready_cv.wait(lk, [&] { return ready; });
+    };
 
     auto render_thread = thread{[&] {
         const auto start_time = chrono::steady_clock::now();
@@ -177,11 +191,7 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
             if (time_since_start - pause_time > settings.duracionSimulacion &&
                 !ready)
             {
-                {
-                    lock_guard lck{ready_mutex};
-                    ready = true;
-                }
-                ready_cv.notify_one();
+                notify_ready();
             }
 
             if (should_render)
@@ -190,6 +200,7 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
                 {
                     pause_time += time_since_last_render;
                 }
+
                 cout << chrono::duration_cast<chrono::seconds>(
                             time_since_start - pause_time)
                             .count()
@@ -208,11 +219,7 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
     }};
 
     {
-        unique_lock lk{ready_mutex};
-        ready_cv.wait(lk, [&] { return ready; });
-    }
-
-    {
+        wait_till_ready();
         lock_guard lock{event_queue_mutex};
         event_queue.push(Event::quit);
     }

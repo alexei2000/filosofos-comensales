@@ -125,7 +125,6 @@ string Philosopher::getColoredId() const
     }
     else if (isThinking())
     {
-
         ss << "\x1b[7m";
     }
 
