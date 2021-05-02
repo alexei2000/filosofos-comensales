@@ -55,21 +55,16 @@ void showStatistics(forward_list<Philosopher> &philosophers)
 {
     for (auto &phil : philosophers)
     {
-        cout << "filósofo: "
-             << phil.getData().id
-             << "\n\tCantidad de veces que comió: "
-             << phil.getEatCounter()
-             << "\n\tCantidad de veces que pensó: "
-             << phil.getThinkCounter()
-             << "\n\tCantidad de veces que esperó: "
-             << phil.getWaitCounter()
+        cout << "filósofo: " << phil.getId()
+             << "\n\tCantidad de veces que comió: " << phil.getEatCounter()
+             << "\n\tCantidad de veces que pensó: " << phil.getThinkCounter()
+             << "\n\tCantidad de veces que esperó: " << phil.getWaitCounter()
              << "\n\tTiempo de comer promedio: "
              << phil.getAverageEatingTime().count() << "s"
              << "\n\tTiempo de pensar promedio: "
              << phil.getAverageThinkingTime().count() << "s"
              << "\n\tTiempo de esperar promedio: "
-             << phil.getAverageWatingTime().count() << "s"
-             << endl
+             << phil.getAverageWatingTime().count() << "s" << endl
              << endl;
     }
 }
@@ -147,8 +142,6 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
     };
 
     auto kill_all = [&] {
-        cout << "\nMatando a los filósofos. Espere un momento.\n";
-
         for (auto &phil : philosophers)
         {
             phil.kill();
@@ -197,14 +190,13 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
         auto last_render_time = start_time;
         chrono::steady_clock::duration pause_time = 0s;
 
-        while (!all_philosophers_died)
+        do
         {
             for (Event e = pop_event(); e != Event::none; e = pop_event())
             {
                 switch (e)
                 {
                 case Event::quit:
-                    kill_all();
                     notify_ready();
                     break;
                 case Event::pause:
@@ -223,10 +215,11 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
             const auto should_render =
                 time_since_last_render >= renders_interval;
 
-            if (time_since_start - pause_time > settings.duracionSimulacion &&
+            if (time_since_start - pause_time >
+                    settings.duracionSimulacion + 1s &&
                 !ready)
             {
-                notify_ready();
+                send_event(Event::quit);
             }
 
             if (should_render)
@@ -235,26 +228,29 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
                 {
                     pause_time += time_since_last_render;
                 }
-                // cout << "\x1b[1000D";
-                cout << chrono::duration_cast<chrono::seconds>(
-                            time_since_start - pause_time)
-                            .count()
-                     << " / " << settings.duracionSimulacion.count()
-                     << " secs: ";
-
-                for (const auto &philosopher : philosophers)
+                else
                 {
-                    cout << philosopher.getColoredId() << " ";
+                    // cout << "\x1b[1000D";
+                    cout << chrono::duration_cast<chrono::seconds>(
+                                time_since_start - pause_time)
+                                .count()
+                         << " / " << settings.duracionSimulacion.count()
+                         << " secs: ";
+
+                    for (const auto &philosopher : philosophers)
+                    {
+                        cout << philosopher.getColoredId() << " ";
+                    }
+                    cout << endl;
                 }
-                cout << endl;
                 last_render_time = chrono::steady_clock::now();
             }
             this_thread::yield();
-        }
+        } while (!all_philosophers_died);
     }};
 
     wait_till_ready();
-    send_event(Event::quit);
+    kill_all();
 
     for (auto &phil : philosophers)
     {

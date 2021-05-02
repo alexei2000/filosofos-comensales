@@ -70,7 +70,7 @@ void Philosopher::philosopherRoutine()
 
         eat();
     }
-    state = PhilosopherStates::DEAD;
+    setState(PhilosopherStates::DEAD);
 }
 
 void Philosopher::kill()
@@ -114,20 +114,22 @@ void Philosopher::think()
 
 unsigned Philosopher::getId() const { return data.id; }
 
-int Philosopher::getEatCounter() { return eatCounter; }
-int Philosopher::getThinkCounter() { return thinkCounter; }
-int Philosopher::getWaitCounter() { return waitCounter; }
-chrono::seconds Philosopher::getAverageEatingTime()
+int Philosopher::getEatCounter() const { return eatCounter; }
+int Philosopher::getThinkCounter() const { return thinkCounter; }
+int Philosopher::getWaitCounter() const { return waitCounter; }
+chrono::seconds Philosopher::getAverageEatingTime() const
 {
-    return totalEatingTime / eatCounter;
+    return eatCounter ? totalEatingTime / eatCounter : 0s;
 }
-chrono::seconds Philosopher::getAverageThinkingTime()
+
+chrono::seconds Philosopher::getAverageThinkingTime() const
 {
-    return totalThinkingTime / thinkCounter;
+    return thinkCounter ? totalThinkingTime / thinkCounter : 0s;
 }
-chrono::seconds Philosopher::getAverageWatingTime()
+
+chrono::seconds Philosopher::getAverageWatingTime() const
 {
-    return totalWatingTime / waitCounter;
+    return waitCounter ? totalWatingTime / waitCounter : 0s;
 }
 bool Philosopher::isEating() const
 {

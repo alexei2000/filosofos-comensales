@@ -36,12 +36,12 @@ public:
     Philosopher &operator=(Philosopher &&) = delete;
 
     PhilosopherData getData();
-    int getEatCounter();
-    int getThinkCounter();
-    int getWaitCounter();
-    chrono::seconds getAverageEatingTime();
-    chrono::seconds getAverageThinkingTime();
-    chrono::seconds getAverageWatingTime();
+    int getEatCounter() const;
+    int getThinkCounter() const;
+    int getWaitCounter() const;
+    chrono::seconds getAverageEatingTime() const;
+    chrono::seconds getAverageThinkingTime() const;
+    chrono::seconds getAverageWatingTime() const;
     void beginPhilosophersLife();
     void waitTillPhilosopherDies();
     void setDish(Dish *dish);
