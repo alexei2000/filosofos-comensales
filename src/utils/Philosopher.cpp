@@ -1,5 +1,6 @@
 #include "Philosopher.hpp"
 
+#include <functional>
 #include <random>
 #include <sstream>
 #include <thread>
@@ -7,6 +8,20 @@
 #include <vector>
 
 using namespace std;
+
+template <typename Func, typename... Args>
+auto measureTime(Func &&f, Args &&...args)
+{
+    const auto initialTime = chrono::steady_clock::now();
+
+    invoke(forward<Func>(f), forward<Args>(args)...);
+
+    const auto finalTime = chrono::steady_clock::now();
+
+    auto delta = finalTime - initialTime;
+
+    return delta;
+}
 
 unsigned Philosopher::next_id{1};
 
@@ -32,9 +47,15 @@ void Philosopher::beginPhilosophersLife()
 
 void Philosopher::waitTillPhilosopherDies() { lifeThread.join(); }
 
-void Philosopher::takeForks() const { data.dish->takeForks(); }
+void Philosopher::takeForks()
+{
+    const auto time = measureTime(&Dish::takeForks, data.dish);
 
-void Philosopher::leaveForks() const { data.dish->leaveForks(); }
+    totalWatingTime += chrono::duration_cast<chrono::seconds>(time);
+    waitCounter++;
+}
+
+void Philosopher::leaveForks() { data.dish->leaveForks(); }
 
 void Philosopher::philosopherRoutine()
 {
@@ -52,35 +73,43 @@ void Philosopher::philosopherRoutine()
     state = PhilosopherStates::DEAD;
 }
 
-void Philosopher::kill() { killed = true; }
+void Philosopher::kill()
+{
+    lock_guard lck{killed_mut};
+    killed = true;
+    killed_cv.notify_one();
+}
 
 static auto generate_random = mt19937{random_device{}()};
 
 void Philosopher::eat()
 {
     const chrono::seconds numRan{1 + generate_random() % maxEat.count()};
-    const auto initialTime = chrono::steady_clock::now();
+
     takeForks();
-    const auto finalTime = chrono::steady_clock::now();
-    totalWatingTime +=
-        chrono::duration_cast<chrono::seconds>(finalTime - initialTime);
-    pause->wait();
-    waitCounter++;
-    state = PhilosopherStates::EATING;
-    this_thread::sleep_for(numRan);
+
+    setState(PhilosopherStates::EATING);
+
+    totalEatingTime += chrono::duration_cast<chrono::seconds>(
+        measureTime([&] { waitTillTimeoutOrKilled(numRan); }));
+    eatCounter++;
+
     leaveForks();
-    pause->wait();
-    state = PhilosopherStates::WAITING;
+
+    setState(PhilosopherStates::WAITING);
 }
 
 void Philosopher::think()
 {
     const chrono::seconds numRan{1 + generate_random() % maxThink.count()};
-    pause->wait();
-    state = PhilosopherStates::THINKING;
-    this_thread::sleep_for(numRan);
-    totalThinkingTime += numRan;
+
+    setState(PhilosopherStates::THINKING);
+
+    totalThinkingTime += chrono::duration_cast<chrono::seconds>(
+        measureTime([&] { waitTillTimeoutOrKilled(numRan); }));
     thinkCounter++;
+
+    setState(PhilosopherStates::WAITING);
 }
 
 unsigned Philosopher::getId() const { return data.id; }

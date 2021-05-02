@@ -59,8 +59,13 @@ public:
 private:
     static unsigned next_id;
     inline static Pause *pause = nullptr;
+
     enum PhilosopherStates state;
-    bool killed{false};
+
+    condition_variable killed_cv{};
+    mutex killed_mut{};
+    atomic_bool killed{false};
+
     int eatCounter;
     int thinkCounter;
     int waitCounter;
@@ -71,11 +76,24 @@ private:
     chrono::seconds maxThink{10s};
     chrono::seconds maxEat{10s};
     PhilosopherData data;
-    void takeForks() const;
-    void leaveForks() const;
+    void takeForks();
+    void leaveForks();
     void philosopherRoutine();
     void eat();
     void think();
+
+    template <typename Rep, typename Period>
+    void waitTillTimeoutOrKilled(const chrono::duration<Rep, Period> &timeout)
+    {
+        unique_lock lck{killed_mut};
+        killed_cv.wait_for(lck, timeout, [&] { return killed == true; });
+    }
+
+    void setState(PhilosopherStates newState)
+    {
+        pause->wait();
+        state = newState;
+    }
 };
 
 #endif

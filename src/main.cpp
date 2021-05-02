@@ -20,6 +20,7 @@ void simulate(forward_list<Philosopher> &philosophers,
 
 enum class Event
 {
+    none,
     quit,
     pause,
     play
@@ -47,8 +48,8 @@ int main(int argc, char *argv[])
     simulate(philosophers, settings);
 }
 
-void process_input(queue<Event> &eventQueue, mutex &queueMut,
-                   atomic_bool &finished)
+template <typename EventSender>
+void process_input(EventSender send_event, atomic_bool &finished)
 {
     while (!finished)
     {
@@ -72,8 +73,8 @@ void process_input(queue<Event> &eventQueue, mutex &queueMut,
             default:
                 continue;
             }
-            lock_guard lock{queueMut};
-            eventQueue.push(e);
+
+            send_event(e);
         }
 
         if (!cin)
@@ -100,8 +101,24 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
 
     Pause pause_handle;
 
-    auto event_queue_mutex = mutex{};
-    auto event_queue = queue<Event>{};
+    auto _event_queue_mutex = mutex{};
+    auto _event_queue = queue<Event>{};
+
+    auto send_event = [&](Event e) {
+        lock_guard lock{_event_queue_mutex};
+        _event_queue.push(e);
+    };
+
+    auto pop_event = [&]() -> Event {
+        lock_guard lock{_event_queue_mutex};
+        if (_event_queue.empty())
+        {
+            return Event::none;
+        }
+        auto e = _event_queue.front();
+        _event_queue.pop();
+        return e;
+    };
 
     auto kill_all = [&] {
         cout << "\nMatando a los filósofos. Espere un momento.\n";
@@ -129,9 +146,8 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
         phil.beginPhilosophersLife();
     }
 
-    auto input_thread = thread{[&] {
-        process_input(event_queue, event_queue_mutex, all_philosophers_died);
-    }};
+    auto input_thread =
+        thread{[&] { process_input(send_event, all_philosophers_died); }};
 
     mutex ready_mutex;
     condition_variable ready_cv;
@@ -156,21 +172,13 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
 
         while (!all_philosophers_died)
         {
-            for (Event e;;)
+            for (Event e = pop_event(); e != Event::none; e = pop_event())
             {
-                {
-                    lock_guard lock{event_queue_mutex};
-                    if (event_queue.empty())
-                    {
-                        break;
-                    }
-                    e = event_queue.front();
-                    event_queue.pop();
-                }
                 switch (e)
                 {
                 case Event::quit:
                     kill_all();
+                    notify_ready();
                     break;
                 case Event::pause:
                     pause();
@@ -200,7 +208,7 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
                 {
                     pause_time += time_since_last_render;
                 }
-
+                // cout << "\x1b[1000D";
                 cout << chrono::duration_cast<chrono::seconds>(
                             time_since_start - pause_time)
                             .count()
@@ -218,11 +226,8 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
         }
     }};
 
-    {
-        wait_till_ready();
-        lock_guard lock{event_queue_mutex};
-        event_queue.push(Event::quit);
-    }
+    wait_till_ready();
+    send_event(Event::quit);
 
     for (auto &phil : philosophers)
     {
