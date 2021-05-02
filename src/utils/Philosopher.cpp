@@ -10,7 +10,7 @@
 using namespace std;
 
 template <typename Func, typename... Args>
-auto measureTime(Func &&f, Args &&...args)
+auto measureTime(Func &&f, Args &&...args) -> chrono::milliseconds
 {
     const auto initialTime = chrono::steady_clock::now();
 
@@ -20,7 +20,7 @@ auto measureTime(Func &&f, Args &&...args)
 
     auto delta = finalTime - initialTime;
 
-    return delta;
+    return chrono::duration_cast<chrono::milliseconds>(delta);
 }
 
 unsigned Philosopher::next_id{1};
@@ -49,9 +49,7 @@ void Philosopher::waitTillPhilosopherDies() { lifeThread.join(); }
 
 void Philosopher::takeForks()
 {
-    const auto time = measureTime(&Dish::takeForks, data.dish);
-
-    totalWatingTime += chrono::duration_cast<chrono::seconds>(time);
+    totalWatingTime += measureTime(&Dish::takeForks, data.dish);
     waitCounter++;
 }
 
@@ -84,14 +82,13 @@ static auto generate_random = mt19937{random_device{}()};
 
 void Philosopher::eat()
 {
-    const chrono::seconds numRan{1 + generate_random() % maxEat.count()};
+    const chrono::milliseconds numRan{1 + generate_random() % maxEat.count()};
 
     takeForks();
 
     setState(PhilosopherStates::EATING);
 
-    totalEatingTime += chrono::duration_cast<chrono::seconds>(
-        measureTime([&] { waitTillTimeoutOrKilled(numRan); }));
+    totalEatingTime += measureTime([&] { waitTillTimeoutOrKilled(numRan); });
     eatCounter++;
 
     leaveForks();
@@ -101,12 +98,11 @@ void Philosopher::eat()
 
 void Philosopher::think()
 {
-    const chrono::seconds numRan{1 + generate_random() % maxThink.count()};
+    const chrono::milliseconds numRan{1 + generate_random() % maxThink.count()};
 
     setState(PhilosopherStates::THINKING);
 
-    totalThinkingTime += chrono::duration_cast<chrono::seconds>(
-        measureTime([&] { waitTillTimeoutOrKilled(numRan); }));
+    totalThinkingTime += measureTime([&] { waitTillTimeoutOrKilled(numRan); });
     thinkCounter++;
 
     setState(PhilosopherStates::WAITING);
@@ -117,20 +113,25 @@ unsigned Philosopher::getId() const { return data.id; }
 int Philosopher::getEatCounter() const { return eatCounter; }
 int Philosopher::getThinkCounter() const { return thinkCounter; }
 int Philosopher::getWaitCounter() const { return waitCounter; }
+
 chrono::seconds Philosopher::getAverageEatingTime() const
 {
-    return eatCounter ? totalEatingTime / eatCounter : 0s;
+    return chrono::duration_cast<chrono::seconds>(
+        eatCounter ? totalEatingTime / eatCounter : 0s);
 }
 
 chrono::seconds Philosopher::getAverageThinkingTime() const
 {
-    return thinkCounter ? totalThinkingTime / thinkCounter : 0s;
+    return chrono::duration_cast<chrono::seconds>(
+        thinkCounter ? totalThinkingTime / thinkCounter : 0s);
 }
 
 chrono::seconds Philosopher::getAverageWatingTime() const
 {
-    return waitCounter ? totalWatingTime / waitCounter : 0s;
+    return chrono::duration_cast<chrono::seconds>(
+        waitCounter ? totalWatingTime / waitCounter : 0s);
 }
+
 bool Philosopher::isEating() const
 {
     return state == PhilosopherStates::EATING;

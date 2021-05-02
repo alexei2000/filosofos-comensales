@@ -35,12 +35,15 @@ int main(int argc, char *argv[])
     const auto settings =
         parseArgs(vector<const char *>(argv + 1, argv + argc));
 
-    auto philosophers = forward_list<Philosopher>(settings.cantidadFilosofos);
+    auto philosophers =
+        forward_list<Philosopher>(settings.getCantidadFilosofos());
 
     for (auto &phil : philosophers)
     {
-        phil.setMaxThink(settings.maxThinkingTime);
-        phil.setMaxEat(settings.maxEatingTime);
+        phil.setMaxThink(duration_cast<milliseconds>(
+            settings.getMaxThinkingTime() * settings.getSpeedFactor()));
+        phil.setMaxEat(duration_cast<milliseconds>(settings.getMaxEatingTime() *
+                                                   settings.getSpeedFactor()));
     }
 
     DiningTable table;
@@ -107,18 +110,11 @@ void process_input(EventSender send_event, atomic_bool &finished)
     }
 }
 
-template <typename Rep, typename Period>
-double duration_to_seconds_double(const chrono::duration<Rep, Period> &d)
-{
-    const auto factor = double(Period::num) / double(Period::den);
-    return d.count() * factor;
-}
-
 void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
 {
     atomic_bool all_philosophers_died = false;
 
-    constexpr auto renders_interval = 1000ms;
+    const auto renders_interval = 1000ms * settings.getSpeedFactor();
 
     Pause pause_handle;
 
@@ -216,7 +212,8 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
                 time_since_last_render >= renders_interval;
 
             if (time_since_start - pause_time >
-                    settings.duracionSimulacion + 1s &&
+                    (settings.getDuracionSimulacion() + 1s) *
+                        settings.getSpeedFactor() &&
                 !ready)
             {
                 send_event(Event::quit);
@@ -231,10 +228,14 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
                 else
                 {
                     // cout << "\x1b[1000D";
-                    cout << chrono::duration_cast<chrono::seconds>(
-                                time_since_start - pause_time)
-                                .count()
-                         << " / " << settings.duracionSimulacion.count()
+                    const auto virtual_time_elapsed =
+                        chrono::duration_cast<chrono::seconds>(
+                            (time_since_start - pause_time) /
+                            settings.getSpeedFactor())
+                            .count();
+                    const auto virtual_total_time =
+                        settings.getDuracionSimulacion().count();
+                    cout << virtual_time_elapsed << " / " << virtual_total_time
                          << " secs: ";
 
                     for (const auto &philosopher : philosophers)

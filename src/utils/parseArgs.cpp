@@ -45,9 +45,17 @@ Settings parseArgs(const vector<const char *> &args)
         exit(EXIT_FAILURE);
     }
 
-    if (!(stringstream(args[1]) >> sett.speed))
+    if (double d; stringstream(args[1]) >> d)
     {
-        cerr << "La velocidad dee ser fast, medium o slow.\n";
+        sett.speed = d;
+    }
+    else if (Speed s; stringstream(args[1]) >> s)
+    {
+        sett.speed = s;
+    }
+    else
+    {
+        cerr << "La velocidad dee ser fast, medium, slow o un número.\n";
         exit(EXIT_FAILURE);
     }
 
@@ -63,14 +71,16 @@ Settings parseArgs(const vector<const char *> &args)
 
     if (!(stringstream(args[3]) >> aux))
     {
-        cerr << "La cantidad de fiósofos debe ser un número entero positivo\n";
+        cerr << "La cantidad de fiósofos debe ser un número entero "
+                "positivo\n";
         exit(EXIT_FAILURE);
     }
     sett.maxThinkingTime = seconds{aux};
 
     if (!(stringstream(args[4]) >> aux))
     {
-        cerr << "La cantidad de fiósofos debe ser un número entero positivo\n";
+        cerr << "La cantidad de fiósofos debe ser un número entero "
+                "positivo\n";
         exit(EXIT_FAILURE);
     }
     sett.maxEatingTime = seconds{aux};
