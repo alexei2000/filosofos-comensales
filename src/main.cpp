@@ -18,6 +18,8 @@ using namespace std;
 void simulate(forward_list<Philosopher> &philosophers,
               const Settings &settings);
 
+void showStatistics(forward_list<Philosopher> &philosophers);
+
 enum class Event
 {
     none,
@@ -46,6 +48,30 @@ int main(int argc, char *argv[])
     table.serve(philosophers.begin(), philosophers.end());
 
     simulate(philosophers, settings);
+    showStatistics(philosophers);
+}
+
+void showStatistics(forward_list<Philosopher> &philosophers)
+{
+    for (auto &phil : philosophers)
+    {
+        cout << "filósofo: "
+             << phil.getData().id
+             << "\n\tCantidad de veces que comió: "
+             << phil.getEatCounter()
+             << "\n\tCantidad de veces que pensó: "
+             << phil.getThinkCounter()
+             << "\n\tCantidad de veces que esperó: "
+             << phil.getWaitCounter()
+             << "\n\tTiempo de comer promedio: "
+             << phil.getAverageEatingTime().count() << "s"
+             << "\n\tTiempo de pensar promedio: "
+             << phil.getAverageThinkingTime().count() << "s"
+             << "\n\tTiempo de esperar promedio: "
+             << phil.getAverageWatingTime().count() << "s"
+             << endl
+             << endl;
+    }
 }
 
 template <typename EventSender>
@@ -134,6 +160,7 @@ void simulate(forward_list<Philosopher> &philosophers, const Settings &settings)
     auto pause = [&] {
         cout << "\nPausando simulación.\n";
         pause_handle.pause();
+        showStatistics(philosophers);
     };
 
     auto play = [&] {
