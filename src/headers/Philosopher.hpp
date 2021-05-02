@@ -51,8 +51,8 @@ public:
     bool isEating() const;
     bool isDead() const;
     bool isThinking() const;
-    void setMaxThink(chrono::seconds value) { maxThink = value; }
-    void setMaxEat(chrono::seconds value) { maxEat = value; }
+    void setMaxThink(chrono::milliseconds value) { maxThink = value; }
+    void setMaxEat(chrono::milliseconds value) { maxEat = value; }
 
     static void registerPause(Pause *p) { pause = p; }
 
@@ -69,12 +69,12 @@ private:
     int eatCounter;
     int thinkCounter;
     int waitCounter;
-    chrono::seconds totalEatingTime;
-    chrono::seconds totalThinkingTime;
-    chrono::seconds totalWatingTime;
+    chrono::milliseconds totalEatingTime;
+    chrono::milliseconds totalThinkingTime;
+    chrono::milliseconds totalWatingTime;
     thread lifeThread{};
-    chrono::seconds maxThink{10s};
-    chrono::seconds maxEat{10s};
+    chrono::milliseconds maxThink{10s};
+    chrono::milliseconds maxEat{10s};
     PhilosopherData data;
     void takeForks();
     void leaveForks();
